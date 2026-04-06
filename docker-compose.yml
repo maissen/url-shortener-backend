@@ -1,23 +1,17 @@
 services:
   api:
     build: .
-    image: flask-backend:latest
-    container_name: flask-backend
-
-    # Load all variables from .env (git-ignored); override individual
-    # values with the 'environment' block below if needed.
+    image: url-shortener-image
+    container_name: url-shortener-backend
     env_file:
       - .env
 
-    environment:
-      APP_ENV: production   # override a single key if desired
-
     ports:
-      - "${PORT:-8080}:${PORT:-8080}"
+      - "${PORT:-80}:${PORT:-80}"
 
     healthcheck:
       test: ["CMD", "python", "-c",
-             "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-8080}/health')"]
+             "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-80}/health')"]
       interval: 30s
       timeout:  5s
       retries:  3
