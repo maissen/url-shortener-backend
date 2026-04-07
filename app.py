@@ -5,10 +5,10 @@ import sys
 from flask import Flask, jsonify, request
 
 # Config from environment variables — no hardcoded values
-APP_NAME    = os.environ.get("APP_NAME", "flask-backend")
-APP_ENV     = os.environ.get("APP_ENV", "production")   # "development" | "production"
+APP_NAME = os.environ.get("APP_NAME", "flask-backend")
+APP_ENV = os.environ.get("APP_ENV", "production")  # "development" | "production"
 APP_VERSION = os.environ.get("APP_VERSION", "1.0.0")
-PORT        = int(os.environ.get("PORT", 8080))
+PORT = int(os.environ.get("PORT", 8080))
 
 # ---------------------------------------------------------------------------
 # Logging — DEBUG in development, INFO in production.
@@ -36,9 +36,9 @@ def health():
         request.remote_addr,
     )
     payload = {
-        "status":  "ok",
-        "app":     APP_NAME,
-        "env":     APP_ENV,
+        "status": "ok",
+        "app": APP_NAME,
+        "env": APP_ENV,
         "version": APP_VERSION,
     }
     logger.debug("Health response payload: %s", payload)
@@ -46,5 +46,7 @@ def health():
 
 
 if __name__ == "__main__":
-    logger.info("Starting %s v%s on port %d (env=%s)", APP_NAME, APP_VERSION, PORT, APP_ENV)
+    logger.info(
+        "Starting %s v%s on port %d (env=%s)", APP_NAME, APP_VERSION, PORT, APP_ENV
+    )
     app.run(host="0.0.0.0", port=PORT)
