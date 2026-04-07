@@ -1,0 +1,133 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      deployable: ${{ steps.filter.outputs.deployable }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            deployable:
+              - '**.py'
+              - 'Dockerfile'
+              - 'requirements*.txt'
+
+  ci:
+    name: Test and scan
+    needs: changes
+    if: needs.changes.outputs.deployable == 'true'
+    uses: ./.github/workflows/build-and-test.yaml
+
+  build-and-push:
+    name: Build and push image
+    needs: ci
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.tag.outputs.short_sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set short SHA
+        id: tag
+        run: echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: |
+            ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ steps.tag.outputs.short_sha }}
+            ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
+
+  deploy-staging:
+    name: Deploy to staging
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.maissen.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Render task definition
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition-staging-template.json
+          container-name: ${{ vars.CONTAINER_NAME }}
+          image: ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}
+
+      - name: Deploy to staging ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          service: ${{ vars.STAGING_ECS_SERVICE }}
+          cluster: ${{ vars.STAGING_ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+  deploy-prod:
+    name: Deploy to prod
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://maissen.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Render task definition
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition-prod-template.json
+          container-name: ${{ vars.CONTAINER_NAME }}
+          image: ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}
+
+      - name: Deploy to prod ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          service: ${{ vars.PROD_ECS_SERVICE }}
+          cluster: ${{ vars.PROD_ECS_CLUSTER }}
+          wait-for-service-stability: true
