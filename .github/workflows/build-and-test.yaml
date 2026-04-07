@@ -22,7 +22,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@v0.35.0
         with:
-          image-ref: '${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ env.SHORT_SHA }}'
+          image-ref: '${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:test'
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
           ignore-unfixed: true
