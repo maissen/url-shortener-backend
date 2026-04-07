@@ -1,0 +1,28 @@
+name: Build and Test
+on:
+  workflow_call:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        uses: docker/setup-docker-action@v5
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v7
+        with:
+          load: true
+          tags: |
+            ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:test
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          image-ref: '${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ env.SHORT_SHA }}'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true

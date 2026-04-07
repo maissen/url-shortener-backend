@@ -1,0 +1,50 @@
+name: CI
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_run_ci: ${{ steps.filter.outputs.code == 'true' || steps.filter.outputs.ci == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check changed paths
+        uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            code:
+              - '**.py'
+              - 'Dockerfile'
+              - 'docker-compose*.yml'
+              - 'docker-compose*.yaml'
+              - 'requirements*.txt'
+            ci:
+              - '.github/workflows/ci.yaml'
+              - '.github/workflows/build-and-test.yaml'
+
+  build-and-test:
+    needs: changes
+    if: needs.changes.outputs.should_run_ci == 'true'
+    uses: ./build-and-test.yaml
+
+  CI-status:
+    needs: [changes, build-and-test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report CI result
+        run: |
+          if [[ "${{ needs.changes.outputs.should_run_ci }}" == "false" ]]; then
+            echo "CI skipped: no changes requiring CI execution"
+            exit 0
+          fi
+          if [[ "${{ needs.build-and-test.result }}" == "success" ]]; then
+            echo "CI passed"
+          else
+            echo "CI failed"
+            exit 1
+          fi
