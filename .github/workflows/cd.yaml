@@ -106,7 +106,7 @@ jobs:
 
   deploy-prod:
     name: Deploy to prod
-    needs: deploy-staging
+    needs: [deploy-staging, build-and-push]
     runs-on: ubuntu-latest
     environment:
       name: production
