@@ -36,7 +36,7 @@ def health():
         request.remote_addr,
     )
     payload = {
-        "status": "ok",
+        "status": "Backend is healthy!",
         "app": APP_NAME,
         "env": APP_ENV,
         "version": APP_VERSION,
