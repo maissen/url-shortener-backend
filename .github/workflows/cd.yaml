@@ -81,11 +81,18 @@ jobs:
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ vars.STAGING_TASK_DEF_FAMILY }} \
+            --query taskDefinition \
+            > staging-task-definition.json
+
       - name: Render task definition
         id: render
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: task-definition-staging-template.json
+          task-definition: staging-task-definition.json
           container-name: ${{ vars.CONTAINER_NAME }}
           image: ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}
 
@@ -116,11 +123,18 @@ jobs:
       - name: Login to ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition ${{ vars.PRODUCTION_TASK_DEF_FAMILY }} \
+            --query taskDefinition \
+            > prod-task-definition.json
+
       - name: Render task definition
         id: render
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: task-definition-prod-template.json
+          task-definition: production-task-definition.json
           container-name: ${{ vars.CONTAINER_NAME }}
           image: ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}
 
