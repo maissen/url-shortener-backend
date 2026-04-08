@@ -37,7 +37,6 @@ def health():
     )
     payload = {
         "status": "Backend is healthy!",
-        "app": APP_NAME,
         "env": APP_ENV,
         "version": APP_VERSION,
     }
