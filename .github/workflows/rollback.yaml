@@ -1,0 +1,93 @@
+name: Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to rollback (staging or production)"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+      image_tag:
+        description: "Image tag - short SHA to rollback to (7 chars)"
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  staging-rollback:
+    if: github.event.inputs.environment == 'staging'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://staging.maissen.com
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::913524910077:role/GithubActionsRole
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Render task definition
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: staging-task-definition.json
+          container-name: ${{ vars.CONTAINER_NAME }}
+          image: ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}
+
+      - name: Deploy rollback to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          service: ${{ vars.STAGING_ECS_SERVICE }}
+          cluster: ${{ vars.STAGING_ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+  prod-rollback:
+    if: github.event.inputs.environment == 'production'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://maissen.com
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::913524910077:role/GithubActionsRole
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Render task definition
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: production-task-definition.json
+          container-name: ${{ vars.CONTAINER_NAME }}
+          image: ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image_tag }}
+
+      - name: Deploy rollback to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          service: ${{ vars.PRODUCTION_ECS_SERVICE }}
+          cluster: ${{ vars.PRODUCTION_ECS_CLUSTER }}
+          wait-for-service-stability: true
