@@ -128,7 +128,7 @@ jobs:
           aws ecs describe-task-definition \
             --task-definition ${{ vars.PRODUCTION_TASK_DEF_FAMILY }} \
             --query taskDefinition \
-            > prod-task-definition.json
+            > production-task-definition.json
 
       - name: Render task definition
         id: render
