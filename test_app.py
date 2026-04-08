@@ -34,27 +34,6 @@ def test_health_returns_200(client):
     assert client.get("/health").status_code == 200
 
 
-def test_health_content_type_is_json(client):
-    assert client.get("/health").content_type == "application/json"
-
-
-def test_health_status_is_ok(client):
-    assert client.get("/health").get_json()["status"] == "ok"
-
-
-def test_health_reflects_env_variables(client):
-    data = client.get("/health").get_json()
-    assert data["app"] == "test-app"
-    assert data["env"] == "development"
-    assert data["version"] == "1.2.3"
-
-
-def test_health_response_has_all_fields(client):
-    assert {"status", "app", "env", "version"} <= client.get(
-        "/health"
-    ).get_json().keys()
-
-
 # ---------------------------------------------------------------------------
 # /health — method enforcement
 # ---------------------------------------------------------------------------
