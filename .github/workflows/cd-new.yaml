@@ -88,6 +88,10 @@ jobs:
       ENV: ${{ needs.decide-env.outputs.env }}
       IMAGE_TAG: ${{ needs.decide-env.outputs.img_tag }}
 
+    environment:
+      name: ${{ env.ENV }}
+      url: ${{ vars[format('{0}_URL', env.ENV_UPPER)] }}
+
     steps:
       - uses: actions/checkout@v4
 
