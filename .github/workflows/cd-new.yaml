@@ -32,41 +32,43 @@ jobs:
     needs: changes
     if: needs.changes.outputs.deployable == 'true'
     runs-on: ubuntu-latest
+
     outputs:
-      env: ${{ steps.prod.outputs.env || steps.staging.outputs.env || steps.qa.outputs.env }}
-      env_upper: ${{ steps.qa.outputs.env_upper || steps.staging.outputs.env_upper || steps.prod.outputs.env_upper }}
-      image_tag: ${{ steps.prod.outputs.image_tag || steps.staging.outputs.image_tag || steps.qa.outputs.image_tag }}
-    permissions:
-      contents: write
+      env: ${{ steps.decide.outputs.env }}
+      env_upper: ${{ steps.decide.outputs.env_upper }}
+      image_tag: ${{ steps.decide.outputs.image_tag }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: set default env to QA
-        id: qa
+      - name: Decide environment
+        id: decide
         run: |
-          echo "sha_short=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
-          echo "env=qa" >> $GITHUB_OUTPUT
-          echo "env_upper=QA" >> $GITHUB_OUTPUT
-          echo "image_tag=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+          SHA_SHORT=${GITHUB_SHA::8}
 
-      - name: set env to Staging
-        if: startsWith(github.ref_name, 'releases/v')
-        id: staging
-        run: |
-          VERSION=${GITHUB_REF_NAME#releases/}
-          echo "env=staging" >> $GITHUB_OUTPUT
-          echo "env_upper=STAGING" >> $GITHUB_OUTPUT
-          echo "image_tag=${VERSION}-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          # set default to QA
+          ENV="qa"
+          ENV_UPPER="QA"
+          IMAGE_TAG="$SHA_SHORT"
 
-      - name: set env to Prod
-        if: github.event_name == 'release' && github.event.action == 'published'
-        id: prod
-        run: |
-          echo "env=prod" >> $GITHUB_OUTPUT
-          echo "env_upper=PROD" >> $GITHUB_OUTPUT
-          echo "image_tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          # staging
+          if [[ "${GITHUB_REF_NAME}" == releases/v* ]]; then
+            VERSION=${GITHUB_REF_NAME#releases/}
+            ENV="staging"
+            ENV_UPPER="STAGING"
+            IMAGE_TAG="${VERSION}-${SHA_SHORT}"
+          fi
+
+          # prod
+          if [[ "${GITHUB_EVENT_NAME}" == "release" && "${GITHUB_EVENT_ACTION}" == "published" ]]; then
+            ENV="prod"
+            ENV_UPPER="PROD"
+            IMAGE_TAG="${GITHUB_EVENT_RELEASE_TAG_NAME}"
+          fi
+
+          echo "env=$ENV" >> $GITHUB_OUTPUT
+          echo "env_upper=$ENV_UPPER" >> $GITHUB_OUTPUT
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Create draft release (Staging only)
         if: startsWith(github.ref_name, 'releases/v')
