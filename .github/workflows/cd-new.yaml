@@ -95,7 +95,7 @@ jobs:
       IMAGE_TAG: ${{ needs.decide-env.outputs.image_tag }}
 
     environment:
-      name: needs.decide-env.outputs.env
+      name: ${{ needs.decide-env.outputs.env }}
       url: ${{ vars[format('{0}_URL', needs.decide-env.outputs.env_upper)] }}
 
     steps:
