@@ -115,7 +115,7 @@ jobs:
         with:
           push: true
           tags: |
-            ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ env.image_tag }}
+            ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
             ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
 
       - name: Download task definition
