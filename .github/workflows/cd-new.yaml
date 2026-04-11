@@ -19,6 +19,9 @@ jobs:
       env_upper: ${{ steps.decide.outputs.env_upper }}
       image_tag: ${{ steps.decide.outputs.image_tag }}
 
+    permissions:
+      contents: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -67,6 +70,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   ci:
+    needs: decide-env
     uses: ./.github/workflows/build-and-test.yaml
 
   cd:
