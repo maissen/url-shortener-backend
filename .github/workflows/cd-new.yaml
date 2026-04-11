@@ -35,7 +35,7 @@ jobs:
     outputs:
       env: ${{ steps.prod.outputs.env || steps.staging.outputs.env || steps.qa.outputs.env }}
       env_upper: ${{ steps.qa.outputs.env_upper || steps.staging.outputs.env_upper || steps.prod.outputs.env_upper }}
-      img_tag: ${{ steps.prod.outputs.img_tag || steps.staging.outputs.img_tag || steps.qa.outputs.img_tag }}
+      image_tag: ${{ steps.prod.outputs.image_tag || steps.staging.outputs.image_tag || steps.qa.outputs.image_tag }}
     permissions:
       contents: write
 
@@ -48,7 +48,7 @@ jobs:
           echo "sha_short=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
           echo "env=qa" >> $GITHUB_OUTPUT
           echo "env_upper=QA" >> $GITHUB_OUTPUT
-          echo "img_tag=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+          echo "image_tag=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
 
       - name: set env to Staging
         if: startsWith(github.ref_name, 'releases/v')
@@ -57,7 +57,7 @@ jobs:
           VERSION=${GITHUB_REF_NAME#releases/}
           echo "env=staging" >> $GITHUB_OUTPUT
           echo "env_upper=STAGING" >> $GITHUB_OUTPUT
-          echo "img_tag=${VERSION}-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+          echo "image_tag=${VERSION}-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
 
       - name: set env to Prod
         if: github.event_name == 'release' && github.event.action == 'published'
@@ -65,7 +65,7 @@ jobs:
         run: |
           echo "env=prod" >> $GITHUB_OUTPUT
           echo "env_upper=PROD" >> $GITHUB_OUTPUT
-          echo "img_tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          echo "image_tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
 
       - name: Create draft release (Staging only)
         if: startsWith(github.ref_name, 'releases/v')
@@ -89,8 +89,7 @@ jobs:
       contents: read
 
     env:
-      ENV: ${{ needs.decide-env.outputs.env }}
-      IMAGE_TAG: ${{ needs.decide-env.outputs.img_tag }}
+      IMAGE_TAG: ${{ needs.decide-env.outputs.image_tag }}
 
     environment:
       name: ${{ env.ENV }}
