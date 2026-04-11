@@ -63,7 +63,7 @@ jobs:
           if [[ "${GITHUB_EVENT_NAME}" == "release" && "${GITHUB_EVENT_ACTION}" == "published" ]]; then
             ENV="prod"
             ENV_UPPER="PROD"
-            IMAGE_TAG="${GITHUB_EVENT_RELEASE_TAG_NAME}"
+            IMAGE_TAG="${{ github.event.release.tag_name }}"
           fi
 
           echo "env=$ENV" >> $GITHUB_OUTPUT
@@ -115,7 +115,7 @@ jobs:
         with:
           push: true
           tags: |
-            ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ env.image_tag }}
+            ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
             ${{ vars.ECR_REGISTRY }}/${{ vars.IMAGE_NAME }}:latest
 
       - name: Download task definition
