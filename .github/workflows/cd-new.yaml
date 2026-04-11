@@ -58,6 +58,7 @@ jobs:
           echo "env=staging" >> $GITHUB_OUTPUT
           echo "env_upper=STAGING" >> $GITHUB_OUTPUT
           echo "image_tag=${VERSION}-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: set env to Prod
         if: github.event_name == 'release' && github.event.action == 'published'
