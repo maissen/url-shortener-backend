@@ -36,6 +36,8 @@ jobs:
           # staging
           if [[ "${GITHUB_REF_NAME}" == releases/v* ]]; then
             VERSION=${GITHUB_REF_NAME#releases/}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+
             ENV="staging"
             ENV_UPPER="STAGING"
             IMAGE_TAG="${VERSION}-${SHA_SHORT}"
@@ -56,7 +58,7 @@ jobs:
         if: startsWith(github.ref_name, 'releases/v')
         uses: release-drafter/release-drafter@v5
         with:
-          tag: ${{ steps.staging.outputs.VERSION }}
+          tag: ${{ steps.decide.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
