@@ -56,11 +56,13 @@ jobs:
           echo "env_upper=$ENV_UPPER" >> $GITHUB_OUTPUT
           echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Create draft release (Staging only)
-        if: startsWith(github.ref_name, 'releases/v')
-        uses: release-drafter/release-drafter@v5
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
         with:
-          tag: ${{ steps.decide.outputs.version }}
+          tag_name: ${{ steps.decide.outputs.version }}
+          name: Release ${{ steps.decide.outputs.version }}
+          draft: true
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
