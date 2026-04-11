@@ -11,26 +11,8 @@ on:
       - published
 
 jobs:
-  changes:
-    name: Detect changes
-    runs-on: ubuntu-latest
-    outputs:
-      deployable: ${{ steps.filter.outputs.deployable }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            deployable:
-              - '**.py'
-              - 'Dockerfile'
-              - 'requirements*.txt'
-
   decide-env:
     needs: changes
-    if: needs.changes.outputs.deployable == 'true'
     runs-on: ubuntu-latest
 
     outputs:
@@ -79,8 +61,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   ci:
-    needs: changes
-    if: needs.changes.outputs.deployable == 'true'
     uses: ./.github/workflows/build-and-test.yaml
 
   cd:
