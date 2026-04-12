@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>URL Shortener — Dev UI</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f9f9f8;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.12);
+    --border-md: rgba(0,0,0,0.22);
+    --text: #1a1a18;
+    --muted: #666662;
+    --hint: #999994;
+    --info-bg: #e6f1fb;
+    --info-text: #0c447c;
+    --success-bg: #eaf3de;
+    --success-text: #3b6d11;
+    --danger-bg: #fcebeb;
+    --danger-text: #a32d2d;
+    --warn-bg: #faeeda;
+    --warn-text: #854f0b;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --mono: 'Menlo', 'Consolas', monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --surface: #252523;
+      --border: rgba(255,255,255,0.1);
+      --border-md: rgba(255,255,255,0.2);
+      --text: #e8e8e2;
+      --muted: #aaa9a3;
+      --hint: #666662;
+      --info-bg: #0c447c;
+      --info-text: #b5d4f4;
+      --success-bg: #27500a;
+      --success-text: #c0dd97;
+      --danger-bg: #791f1f;
+      --danger-text: #f7c1c1;
+      --warn-bg: #633806;
+      --warn-text: #fac775;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem 1rem;
+  }
+
+  header {
+    max-width: 720px;
+    margin: 0 auto 2rem;
+  }
+
+  header h1 {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+
+  header p {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .stack {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 0.5px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .card-header:hover { background: var(--bg); }
+
+  .method-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    flex-shrink: 0;
+  }
+
+  .badge-post { background: var(--success-bg); color: var(--success-text); }
+  .badge-get  { background: var(--info-bg);    color: var(--info-text); }
+  .badge-del  { background: var(--danger-bg);  color: var(--danger-text); }
+
+  .card-header .path {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    flex: 1;
+  }
+
+  .card-header .desc {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .chevron {
+    font-size: 11px;
+    color: var(--hint);
+    transition: transform 0.15s;
+  }
+
+  .card-body {
+    padding: 16px;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card.open .card-body { display: flex; }
+  .card.open .chevron   { transform: rotate(90deg); }
+
+  label {
+    font-size: 12px;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  input[type="text"], input[type="url"], input[type="number"] {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 13px;
+    border: 0.5px solid var(--border-md);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    font-family: inherit;
+  }
+
+  input:focus {
+    border-color: #378add;
+    box-shadow: 0 0 0 2px rgba(55,138,221,0.18);
+  }
+
+  .row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .row > div { flex: 1; }
+
+  button {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 0.5px solid var(--border-md);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+    transition: background 0.1s;
+    flex-shrink: 0;
+  }
+
+  button:hover   { background: var(--bg); }
+  button:active  { transform: scale(0.98); }
+  button.primary {
+    background: var(--text);
+    color: var(--surface);
+    border-color: transparent;
+  }
+  button.primary:hover { opacity: 0.85; }
+
+  .response-box {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .response-box.visible { display: flex; }
+
+  .response-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-pill {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: var(--mono);
+  }
+
+  .s-2xx { background: var(--success-bg); color: var(--success-text); }
+  .s-4xx { background: var(--warn-bg);    color: var(--warn-text); }
+  .s-5xx { background: var(--danger-bg);  color: var(--danger-text); }
+
+  .response-time { font-size: 11px; color: var(--hint); }
+
+  pre {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 12px;
+    font-family: var(--mono);
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: var(--text);
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .divider {
+    height: 0.5px;
+    background: var(--border);
+    margin: 4px 0;
+  }
+
+  .hint-text {
+    font-size: 12px;
+    color: var(--hint);
+  }
+
+  .copy-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    margin-left: auto;
+  }
+
+  .shortlink {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: var(--info-bg);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--info-text);
+    font-family: var(--mono);
+  }
+
+  .shortlink.visible { display: flex; }
+  .shortlink a { color: inherit; font-weight: 500; word-break: break-all; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>URL Shortener — API tester</h1>
+  <p>Dev UI for testing the local backend. Click any endpoint to expand.</p>
+</header>
+
+<div class="stack">
+
+  <!-- POST /shorten -->
+  <div class="card open" id="card-shorten">
+    <div class="card-header" onclick="toggle('card-shorten')">
+      <span class="method-badge badge-post">POST</span>
+      <span class="path">/shorten</span>
+      <span class="desc">Create short URL</span>
+      <span class="chevron">&#9658;</span>
+    </div>
+    <div class="card-body">
+      <div>
+        <label>Long URL</label>
+        <div class="row">
+          <div>
+            <input type="url" id="shorten-url" placeholder="https://example.com/very/long/path" />
+          </div>
+          <button class="primary" onclick="doShorten()">Shorten</button>
+        </div>
+      </div>
+      <div class="shortlink" id="shorten-result-link">
+        <span>&#10003;</span>
+        <a id="shorten-link-anchor" href="#" target="_blank"></a>
+        <button class="copy-btn" onclick="copyShortLink()">Copy</button>
+      </div>
+      <div class="response-box" id="resp-shorten">
+        <div class="response-meta">
+          <span class="status-pill" id="resp-shorten-status"></span>
+          <span class="response-time" id="resp-shorten-time"></span>
+          <button class="copy-btn" onclick="copyPre('resp-shorten-pre')">Copy JSON</button>
+        </div>
+        <pre id="resp-shorten-pre"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- GET /<code> redirect -->
+  <div class="card" id="card-redirect">
+    <div class="card-header" onclick="toggle('card-redirect')">
+      <span class="method-badge badge-get">GET</span>
+      <span class="path">/{code}</span>
+      <span class="desc">Redirect</span>
+      <span class="chevron">&#9658;</span>
+    </div>
+    <div class="card-body">
+      <div>
+        <label>Short code (7 chars)</label>
+        <div class="row">
+          <div><input type="text" id="redirect-code" placeholder="a3f9b21" maxlength="7" /></div>
+          <button class="primary" onclick="doRedirect()">Test (no follow)</button>
+        </div>
+      </div>
+      <p class="hint-text">Checks the 301 response without following it — browser would redirect otherwise.</p>
+      <div class="response-box" id="resp-redirect">
+        <div class="response-meta">
+          <span class="status-pill" id="resp-redirect-status"></span>
+          <span class="response-time" id="resp-redirect-time"></span>
+        </div>
+        <pre id="resp-redirect-pre"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- GET /stats/<code> -->
+  <div class="card" id="card-stats">
+    <div class="card-header" onclick="toggle('card-stats')">
+      <span class="method-badge badge-get">GET</span>
+      <span class="path">/stats/{code}</span>
+      <span class="desc">Click stats</span>
+      <span class="chevron">&#9658;</span>
+    </div>
+    <div class="card-body">
+      <div>
+        <label>Short code</label>
+        <div class="row">
+          <div><input type="text" id="stats-code" placeholder="a3f9b21" maxlength="7" /></div>
+          <button class="primary" onclick="doStats()">Fetch</button>
+        </div>
+      </div>
+      <div class="response-box" id="resp-stats">
+        <div class="response-meta">
+          <span class="status-pill" id="resp-stats-status"></span>
+          <span class="response-time" id="resp-stats-time"></span>
+          <button class="copy-btn" onclick="copyPre('resp-stats-pre')">Copy JSON</button>
+        </div>
+        <pre id="resp-stats-pre"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- GET /urls -->
+  <div class="card" id="card-list">
+    <div class="card-header" onclick="toggle('card-list')">
+      <span class="method-badge badge-get">GET</span>
+      <span class="path">/urls</span>
+      <span class="desc">List all URLs</span>
+      <span class="chevron">&#9658;</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div>
+          <label>Limit (1–100)</label>
+          <input type="number" id="list-limit" value="10" min="1" max="100" />
+        </div>
+        <div style="flex:2">
+          <label>Cursor (leave blank for first page)</label>
+          <input type="text" id="list-cursor" placeholder="pagination token" />
+        </div>
+        <button class="primary" onclick="doList()">Fetch</button>
+      </div>
+      <div class="response-box" id="resp-list">
+        <div class="response-meta">
+          <span class="status-pill" id="resp-list-status"></span>
+          <span class="response-time" id="resp-list-time"></span>
+          <button class="copy-btn" onclick="copyPre('resp-list-pre')">Copy JSON</button>
+        </div>
+        <pre id="resp-list-pre"></pre>
+        <button id="list-next-btn" style="display:none;align-self:flex-start" onclick="listNextPage()">Next page &#8594;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE /<code> -->
+  <div class="card" id="card-delete">
+    <div class="card-header" onclick="toggle('card-delete')">
+      <span class="method-badge badge-del">DELETE</span>
+      <span class="path">/{code}</span>
+      <span class="desc">Delete short URL</span>
+      <span class="chevron">&#9658;</span>
+    </div>
+    <div class="card-body">
+      <div>
+        <label>Short code</label>
+        <div class="row">
+          <div><input type="text" id="delete-code" placeholder="a3f9b21" maxlength="7" /></div>
+          <button onclick="doDelete()" style="border-color: var(--danger-text); color: var(--danger-text);">Delete</button>
+        </div>
+      </div>
+      <div class="response-box" id="resp-delete">
+        <div class="response-meta">
+          <span class="status-pill" id="resp-delete-status"></span>
+          <span class="response-time" id="resp-delete-time"></span>
+        </div>
+        <pre id="resp-delete-pre"></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- GET /health -->
+  <div class="card" id="card-health">
+    <div class="card-header" onclick="toggle('card-health')">
+      <span class="method-badge badge-get">GET</span>
+      <span class="path">/health</span>
+      <span class="desc">Health check</span>
+      <span class="chevron">&#9658;</span>
+    </div>
+    <div class="card-body">
+      <button class="primary" onclick="doHealth()" style="align-self:flex-start">Ping</button>
+      <div class="response-box" id="resp-health">
+        <div class="response-meta">
+          <span class="status-pill" id="resp-health-status"></span>
+          <span class="response-time" id="resp-health-time"></span>
+        </div>
+        <pre id="resp-health-pre"></pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const BASE = '';
+
+function toggle(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function statusClass(code) {
+  if (code >= 200 && code < 300) return 's-2xx';
+  if (code >= 400 && code < 500) return 's-4xx';
+  return 's-5xx';
+}
+
+function showResponse(prefix, status, body, ms) {
+  const box    = document.getElementById('resp-' + prefix);
+  const pill   = document.getElementById('resp-' + prefix + '-status');
+  const time   = document.getElementById('resp-' + prefix + '-time');
+  const pre    = document.getElementById('resp-' + prefix + '-pre');
+
+  pill.textContent = status;
+  pill.className   = 'status-pill ' + statusClass(status);
+  time.textContent = ms + ' ms';
+  pre.textContent  = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+  box.classList.add('visible');
+}
+
+async function req(method, path, body) {
+  const opts = { method, headers: {} };
+  if (body !== undefined) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const t0 = performance.now();
+  const r   = await fetch(BASE + path, opts);
+  const ms  = Math.round(performance.now() - t0);
+  let data;
+  try { data = await r.json(); } catch { data = await r.text(); }
+  return { status: r.status, data, ms, headers: r.headers };
+}
+
+async function doShorten() {
+  const url = document.getElementById('shorten-url').value.trim();
+  if (!url) return;
+  const { status, data, ms } = await req('POST', '/shorten', { url });
+  showResponse('shorten', status, data, ms);
+  if (status === 201 && data.short_url) {
+    const link   = document.getElementById('shorten-result-link');
+    const anchor = document.getElementById('shorten-link-anchor');
+    anchor.href        = data.short_url;
+    anchor.textContent = data.short_url;
+    link.classList.add('visible');
+    // Auto-fill the code fields
+    ['redirect-code','stats-code','delete-code'].forEach(id => {
+      document.getElementById(id).value = data.code;
+    });
+  }
+}
+
+async function doRedirect() {
+  const code = document.getElementById('redirect-code').value.trim();
+  if (!code) return;
+  const t0 = performance.now();
+  const r  = await fetch(BASE + '/' + code, { method: 'GET', redirect: 'manual' });
+  const ms = Math.round(performance.now() - t0);
+  let body;
+  try { body = await r.json(); } catch { body = { location: r.headers.get('location') || '(no body)' }; }
+  showResponse('redirect', r.status, body, ms);
+}
+
+async function doStats() {
+  const code = document.getElementById('stats-code').value.trim();
+  if (!code) return;
+  const { status, data, ms } = await req('GET', '/stats/' + code);
+  showResponse('stats', status, data, ms);
+}
+
+let _lastCursor = null;
+
+async function doList() {
+  const limit  = document.getElementById('list-limit').value || 10;
+  const cursor = document.getElementById('list-cursor').value.trim();
+  let path = '/urls?limit=' + limit;
+  if (cursor) path += '&cursor=' + encodeURIComponent(cursor);
+  const { status, data, ms } = await req('GET', path);
+  showResponse('list', status, data, ms);
+  const nextBtn = document.getElementById('list-next-btn');
+  if (status === 200 && data.cursor) {
+    _lastCursor = data.cursor;
+    nextBtn.style.display = 'block';
+  } else {
+    _lastCursor = null;
+    nextBtn.style.display = 'none';
+  }
+}
+
+function listNextPage() {
+  if (_lastCursor) {
+    document.getElementById('list-cursor').value = _lastCursor;
+    doList();
+  }
+}
+
+async function doDelete() {
+  const code = document.getElementById('delete-code').value.trim();
+  if (!code) return;
+  if (!confirm('Delete short code "' + code + '"?')) return;
+  const { status, data, ms } = await req('DELETE', '/' + code);
+  showResponse('delete', status, data, ms);
+}
+
+async function doHealth() {
+  const { status, data, ms } = await req('GET', '/health');
+  showResponse('health', status, data, ms);
+}
+
+function copyPre(id) {
+  navigator.clipboard.writeText(document.getElementById(id).textContent);
+}
+
+function copyShortLink() {
+  const anchor = document.getElementById('shorten-link-anchor');
+  navigator.clipboard.writeText(anchor.href);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+    const card = e.target.closest('.card');
+    if (!card) return;
+    const btn = card.querySelector('button.primary');
+    if (btn) btn.click();
+  }
+});
+</script>
+</body>
+</html>
