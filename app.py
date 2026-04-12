@@ -9,6 +9,7 @@ import uuid
 import boto3
 from botocore.exceptions import ClientError
 from flask import Flask, jsonify, redirect, request
+from flask import send_from_directory
 
 # ---------------------------------------------------------------------------
 # Config from environment variables — no hardcoded values
@@ -83,6 +84,11 @@ app = Flask(__name__)
 
 # Paths that must never be matched by the /<code> wildcard routes.
 _RESERVED_PATHS = {"health", "shorten", "urls", "stats"}
+
+
+@app.route("/ui")
+def ui():
+    return send_from_directory(".", "ui.html")
 
 
 # ── Request lifecycle hooks ─────────────────────────────────────────────────
