@@ -80,6 +80,9 @@ logger.info(
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
 
+# Paths that must never be matched by the /<code> wildcard routes.
+_RESERVED_PATHS = {"health", "shorten", "urls", "stats"}
+
 
 # ── Request lifecycle hooks ─────────────────────────────────────────────────
 
@@ -192,6 +195,9 @@ def redirect_to_url(code: str):
     Redirect a short code to its original URL.
     Atomically increments the click counter on each visit.
     """
+    if code in _RESERVED_PATHS:
+        return jsonify({"error": "not found"}), 404
+
     try:
         result = table.update_item(
             Key={"code": code},
@@ -353,6 +359,9 @@ def delete_url(code: str):
     Response 200:  { "deleted": true, "code": "a3f9b21" }
     Response 404:  { "error": "short URL not found" }
     """
+    if code in _RESERVED_PATHS:
+        return jsonify({"error": "not found"}), 404
+
     try:
         table.delete_item(
             Key={"code": code},
