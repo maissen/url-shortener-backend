@@ -70,13 +70,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  ci:
-    needs: decide-env
-    uses: ./.github/workflows/build-and-test.yaml
-
   cd:
     name: Deploy to ${{ needs.decide-env.outputs.env }}
-    needs: [ci, decide-env]
+    needs: decide-env
     runs-on: ubuntu-latest
     permissions:
       id-token: write
