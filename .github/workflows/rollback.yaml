@@ -26,11 +26,13 @@ jobs:
       name: ${{ github.event.inputs.environment }}
       url: ${{ vars[format('{0}_URL', github.event.inputs.environment)] }}
 
-    env:
-      ENV_UPPER: ${{ toUpper(github.event.inputs.environment) }}
-
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set ENV_UPPER
+        run: echo "ENV_UPPER=${ENVIRONMENT^^}" >> $GITHUB_ENV
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
