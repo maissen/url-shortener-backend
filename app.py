@@ -9,6 +9,10 @@ import boto3
 from botocore.exceptions import ClientError
 from flask import Flask, jsonify, redirect, request
 
+# Custom URL converter: only matches exactly 7 lowercase hex characters.
+# This prevents the wildcard from swallowing reserved paths or arbitrary strings.
+from werkzeug.routing import BaseConverter
+
 # ---------------------------------------------------------------------------
 # Config from environment variables — no hardcoded values
 # ---------------------------------------------------------------------------
@@ -80,8 +84,12 @@ logger.info(
 # ---------------------------------------------------------------------------
 app = Flask(__name__)
 
-# Paths that must never be matched by the /<code> wildcard routes.
-_RESERVED_PATHS = {"health", "shorten", "urls", "stats"}
+
+class ShortCodeConverter(BaseConverter):
+    regex = r"[0-9a-f]{7}"
+
+
+app.url_map.converters["code"] = ShortCodeConverter
 
 
 # ── Request lifecycle hooks ─────────────────────────────────────────────────
@@ -115,13 +123,16 @@ def log_request(response):
 # ── Health ──────────────────────────────────────────────────────────────────
 
 
-@app.route("/health", methods=["GET"])
+@app.route("/health", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 def health():
     """
     Liveness + readiness probe.
     Verifies DynamoDB connectivity so the orchestrator can route traffic away
     from an instance that has lost its backing store.
     """
+    if request.method != "GET":
+        return jsonify({"error": "method not allowed"}), 405
+
     try:
         boto3.client("dynamodb", region_name=AWS_REGION).describe_table(
             TableName=TABLE_NAME
@@ -189,15 +200,12 @@ def shorten():
 # ── Redirect ────────────────────────────────────────────────────────────────
 
 
-@app.route("/<code>", methods=["GET"])
+@app.route("/<code:code>", methods=["GET"])
 def redirect_to_url(code: str):
     """
     Redirect a short code to its original URL.
     Atomically increments the click counter on each visit.
     """
-    if code in _RESERVED_PATHS:
-        return jsonify({"error": "not found"}), 404
-
     try:
         result = table.update_item(
             Key={"code": code},
@@ -351,7 +359,7 @@ def list_urls():
 # ── Delete ───────────────────────────────────────────────────────────────────
 
 
-@app.route("/<code>", methods=["DELETE"])
+@app.route("/<code:code>", methods=["DELETE"])
 def delete_url(code: str):
     """
     Delete a short URL entry.
@@ -359,9 +367,6 @@ def delete_url(code: str):
     Response 200:  { "deleted": true, "code": "a3f9b21" }
     Response 404:  { "error": "short URL not found" }
     """
-    if code in _RESERVED_PATHS:
-        return jsonify({"error": "not found"}), 404
-
     try:
         table.delete_item(
             Key={"code": code},
