@@ -3,12 +3,14 @@ on:
   pull_request:
     branches:
       - main
+
 jobs:
   changes:
     name: Detect changes
     runs-on: ubuntu-latest
     outputs:
-      should_run_ci: ${{ steps.filter.outputs.code == 'true' || steps.filter.outputs.ci == 'true' }}
+      should_run_tests: ${{ steps.filter.outputs.code == 'true' || steps.filter.outputs.ci == 'true' }}
+      should_run_lint: ${{ steps.filter.outputs.lint == 'true' || steps.filter.outputs.ci == 'true' }}
     steps:
       - uses: actions/checkout@v4
       - name: Check changed paths
@@ -22,29 +24,43 @@ jobs:
               - 'docker-compose*.yml'
               - 'docker-compose*.yaml'
               - 'requirements*.txt'
+            lint:
+              - '**.py'
+              - '**.yaml'
+              - '**.yml'
+              - 'Dockerfile'
             ci:
-              - '.github/workflows/ci.yaml'
-              - '.github/workflows/build-and-test.yaml'
+              - '.github/workflows/*.yaml'
+              - '.github/workflows/*.yml'
+
+  lint:
+    needs: changes
+    if: needs.changes.outputs.should_run_lint == 'true'
+    uses: ./.github/workflows/lint.yaml
 
   build-and-test:
-    needs: changes
-    if: needs.changes.outputs.should_run_ci == 'true'
+    needs: [changes, lint]
+    if: needs.changes.outputs.should_run_tests == 'true'
     uses: ./.github/workflows/build-and-test.yaml
 
   CI-status:
-    needs: [changes, build-and-test]
+    needs: [changes, build-and-test, lint]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Report CI result
         run: |
-          if [[ "${{ needs.changes.outputs.should_run_ci }}" == "false" ]]; then
-            echo "CI skipped: no changes requiring CI execution"
-            exit 0
-          fi
-          if [[ "${{ needs.build-and-test.result }}" == "success" ]]; then
-            echo "CI passed"
-          else
-            echo "CI failed"
+          TESTS_RESULT="${{ needs.build-and-test.result }}"
+          LINT_RESULT="${{ needs.lint.result }}"
+
+          if [[ "$LINT_RESULT" == "failure" || "$LINT_RESULT" == "cancelled" ]]; then
+            echo "CI failed: lint did not pass"
             exit 1
           fi
+
+          if [[ "$TESTS_RESULT" == "failure" || "$TESTS_RESULT" == "cancelled" ]]; then
+            echo "CI failed: build-and-test did not pass"
+            exit 1
+          fi
+
+          echo "CI passed"
