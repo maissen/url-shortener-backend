@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import sys
 import time
 import uuid
@@ -198,7 +199,7 @@ def redirect_to_url(code: str):
     Redirect a short code to its original URL.
     Atomically increments the click counter on each visit.
     """
-    if code in _RESERVED_PATHS:
+    if code in _RESERVED_PATHS or not re.fullmatch(r"[0-9a-zA-Z]{7}", code):
         return jsonify({"error": "not found"}), 404
 
     try:
@@ -362,7 +363,7 @@ def delete_url(code: str):
     Response 200:  { "deleted": true, "code": "a3f9b21" }
     Response 404:  { "error": "short URL not found" }
     """
-    if code in _RESERVED_PATHS:
+    if code in _RESERVED_PATHS or not re.fullmatch(r"[0-9a-zA-Z]{7}", code):
         return jsonify({"error": "not found"}), 404
 
     try:
