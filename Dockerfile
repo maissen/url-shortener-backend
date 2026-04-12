@@ -34,7 +34,7 @@ COPY --from=builder /install /usr/local
 RUN pip uninstall -y pip setuptools wheel 2>/dev/null || true
 
 # Copy application code
-COPY app.py .
+COPY . .
 
 # Switch to non-root user
 USER appuser

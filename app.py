@@ -88,7 +88,7 @@ _RESERVED_PATHS = {"health", "shorten", "urls", "stats"}
 
 @app.route("/ui")
 def ui():
-    return send_from_directory(".", "ui.html")
+    return send_from_directory(os.path.dirname(os.path.abspath(__file__)), "ui.html")
 
 
 # ── Request lifecycle hooks ─────────────────────────────────────────────────
