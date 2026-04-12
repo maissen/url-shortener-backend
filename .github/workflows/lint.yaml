@@ -1,19 +1,11 @@
 name: Lint
 
 on:
-  pull_request:
-    paths:
-      - "**.py"
-      - "**.yaml"
-      - "**.yml"
-      - "Dockerfile"
-    branches:
-      - main
+  workflow_call:
 
 jobs:
   lint-status:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
