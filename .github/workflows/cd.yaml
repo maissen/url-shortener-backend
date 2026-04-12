@@ -1,4 +1,4 @@
-name: CD-new
+name: CD
 
 on:
   push:
