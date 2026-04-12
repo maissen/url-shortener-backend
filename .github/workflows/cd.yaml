@@ -48,7 +48,7 @@ jobs:
           fi
 
           # prod
-          if [[ "${GITHUB_EVENT_NAME}" == "release" && "${GITHUB_EVENT_ACTION}" == "published" ]]; then
+          if [[ "${{ github.event_name }}" == "release" && "${{ github.event.action }}" == "published" ]]; then
             ENV="prod"
             ENV_UPPER="PROD"
             IMAGE_TAG="${{ github.event.release.tag_name }}"
