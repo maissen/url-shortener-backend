@@ -11,6 +11,9 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 # ── Runtime stage ───────────────────────────────────────────────────────────────
 FROM python:3.11-slim
 
+# Patch OS-level vulnerabilities (e.g. CVE-2026-28390 in openssl)
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 # Non-root user
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
