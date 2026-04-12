@@ -1,5 +1,5 @@
 # ── Build stage ────────────────────────────────────────────────────────────────
-FROM python:3.13-slim AS builder
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 
 # ── Runtime stage ───────────────────────────────────────────────────────────────
-FROM python:3.13-slim
+FROM python:3.11-slim
 
 # Non-root user
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
