@@ -15,7 +15,7 @@ from flask import Flask, jsonify, redirect, request
 APP_NAME = os.environ.get("APP_NAME", "url-shortener-backend")
 APP_ENV = os.environ.get("APP_ENV", "production")  # "development" | "production"
 APP_VERSION = os.environ.get("APP_VERSION", "1.0.0")
-PORT = int(os.environ.get("PORT", 8080))
+PORT = int(os.environ.get("PORT", 3000))
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 BASE_URL = os.environ.get("BASE_URL", "https://api.yourdomain.xyz")
 
