@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: "Environment to rollback (staging or production)"
+        description: "Environment to rollback (staging or prod)"
         required: true
         type: choice
         options:
           - staging
-          - production
+          - prod
 
       image_tag:
         description: "Image tag from ECR to rollback to"
