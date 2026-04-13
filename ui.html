@@ -58,7 +58,7 @@
   }
 
   header {
-    max-width: 720px;
+    max-width: 1200px;
     margin: 0 auto 2rem;
   }
 
@@ -73,12 +73,19 @@
     color: var(--muted);
   }
 
-  .stack {
-    max-width: 720px;
+  /* ── Two-column grid ── */
+  .grid {
+    max-width: 1200px;
     margin: 0 auto;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 1rem;
+    align-items: start;
+  }
+
+  /* Single-column on narrow screens */
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: 1fr; }
   }
 
   .card {
@@ -280,7 +287,7 @@
   <p>Dev UI for testing the local backend. Click any endpoint to expand.</p>
 </header>
 
-<div class="stack">
+<div class="grid">
 
   <!-- POST /shorten -->
   <div class="card open" id="card-shorten">
@@ -573,7 +580,6 @@ function copyShortLink() {
   const anchor = document.getElementById('shorten-link-anchor');
   const url = anchor.textContent.trim();
   navigator.clipboard.writeText(url).catch(() => {
-    // fallback for non-secure contexts
     const ta = document.createElement('textarea');
     ta.value = url;
     document.body.appendChild(ta);
