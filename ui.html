@@ -571,7 +571,16 @@ function copyPre(id) {
 
 function copyShortLink() {
   const anchor = document.getElementById('shorten-link-anchor');
-  navigator.clipboard.writeText(anchor.href);
+  const url = anchor.textContent.trim();
+  navigator.clipboard.writeText(url).catch(() => {
+    // fallback for non-secure contexts
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
 }
 
 document.addEventListener('keydown', e => {
