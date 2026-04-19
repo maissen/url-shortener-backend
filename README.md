@@ -249,6 +249,8 @@ Every endpoint is tested for happy-path responses, error branches (missing field
 
 Every image pushed to ECR is tagged with the short git commit SHA (first 8 characters of `GITHUB_SHA`). For `releases/v*` branches the tag is `{version}-{sha}` (e.g. `v1.2.0-a3f9b21c`); for published releases it is the tag name itself (e.g. `v1.2.0`). This makes every deployed image traceable back to a specific commit without relying on `latest`.
 
+![Local dev demo](docs/branching-strategy.png)
+
 The rollback workflow in the [infrastructure repo](https://github.com/maissen/url-shortener-infra) accepts any historical image tag from ECR and redeploys it to staging or production. To find available tags:
 
 ```bash
