@@ -34,7 +34,6 @@ jobs:
           ENV="qa"
           ENV_UPPER="QA"
           IMAGE_TAG="$SHA_SHORT"
-          echo "environment is set to QA"
 
           # staging
           if [[ "${GITHUB_REF_NAME}" == releases/v* ]]; then
@@ -44,7 +43,6 @@ jobs:
             ENV="staging"
             ENV_UPPER="STAGING"
             IMAGE_TAG="${VERSION}-${SHA_SHORT}"
-            echo "environment is set to Staging"
           fi
 
           # prod
@@ -52,8 +50,9 @@ jobs:
             ENV="prod"
             ENV_UPPER="PROD"
             IMAGE_TAG="${{ github.event.release.tag_name }}"
-            echo "environment is set to Prod"
           fi
+
+          echo "environment is set to $ENV_UPPER"
 
           echo "env=$ENV" >> $GITHUB_OUTPUT
           echo "env_upper=$ENV_UPPER" >> $GITHUB_OUTPUT
