@@ -14,9 +14,9 @@ from flask import send_from_directory
 # ---------------------------------------------------------------------------
 # Config from environment variables — no hardcoded values
 # ---------------------------------------------------------------------------
-APP_NAME = os.environ.get("APP_NAME", "url-shortener-backend")
-APP_ENV = os.environ.get("APP_ENV", "production")  # "development" | "production"
-APP_VERSION = os.environ.get("APP_VERSION", "1.0.0")
+APP_ENV = os.environ.get(
+    "APP_ENV", "production"
+)  # "development" | "staging" | "production"
 PORT = int(os.environ.get("PORT", 3000))
 AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
 BASE_URL = os.environ.get("BASE_URL", "https://api.yourdomain.xyz")
@@ -69,9 +69,7 @@ TABLE_NAME = get_ssm_param(
 )
 table = dynamo.Table(TABLE_NAME)
 logger.info(
-    "Starting %s v%s (env=%s, table=%s, port=%d)",
-    APP_NAME,
-    APP_VERSION,
+    "Starting (env=%s, table=%s, port=%d)",
     APP_ENV,
     TABLE_NAME,
     PORT,
@@ -138,8 +136,6 @@ def health():
         )
         payload = {
             "status": "ok",
-            "app": APP_NAME,
-            "version": APP_VERSION,
             "env": APP_ENV,
         }
         logger.debug("Health check passed: %s", payload)
@@ -402,7 +398,5 @@ def delete_url(code: str):
 # Entrypoint (dev only — production uses gunicorn via Dockerfile CMD)
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    logger.info(
-        "Starting %s v%s on port %d (env=%s)", APP_NAME, APP_VERSION, PORT, APP_ENV
-    )
+    logger.info("Starting on port %d (env=%s)", PORT, APP_ENV)
     app.run(host="0.0.0.0", port=PORT, debug=(APP_ENV == "development"))
