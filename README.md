@@ -251,8 +251,13 @@ Every image pushed to ECR is tagged with the short git commit SHA (first 8 chara
 
 ![Local dev demo](docs/branching-strategy.png)
 
-The rollback workflow in the [infrastructure repo](https://github.com/maissen/url-shortener-infra) accepts any historical image tag from ECR and redeploys it to staging or production. To find available tags:
+
+The rollback is handled by the `rollback.yaml` workflow. It prompts you to enter the desired image tag from ECR and select the target environment (staging or prod), then redeploys accordingly.
+
+To find available tags:
 
 ```bash
 aws ecr list-images --repository-name url-shortener --filter tagStatus=TAGGED
 ```
+
+![ECR available tags](docs/rollback.png)
