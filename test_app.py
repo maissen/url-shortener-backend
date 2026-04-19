@@ -83,9 +83,7 @@ def mock_aws(monkeypatch):
 
 @pytest.fixture()
 def client(monkeypatch, mock_aws):
-    monkeypatch.setenv("APP_NAME", "test-app")
     monkeypatch.setenv("APP_ENV", "development")
-    monkeypatch.setenv("APP_VERSION", "1.2.3")
     monkeypatch.setenv("PORT", "8080")
     monkeypatch.setenv("BASE_URL", "https://short.test")
     monkeypatch.setenv("DYNAMODB_TABLE", "url-shortener-test")
@@ -114,9 +112,9 @@ def test_health_returns_200(client):
 def test_health_response_body(client):
     data = client.get("/health").get_json()
     assert data["status"] == "ok"
-    assert data["app"] == "test-app"
-    assert data["version"] == "1.2.3"
     assert data["env"] == "development"
+    assert "app" not in data
+    assert "version" not in data
 
 
 def test_health_degraded_when_dynamo_unavailable(client):
